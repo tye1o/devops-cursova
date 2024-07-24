@@ -50,8 +50,3 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
         aws-region: eu-north-1
-
-    - name: Deploy to AWS (example step)
-      run: |
-        # Add your deployment commands here, for example:
-        aws s3 cp myapp.zip s3://my-bucket/myapp.zip
