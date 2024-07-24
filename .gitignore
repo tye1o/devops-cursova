@@ -1,3 +1,11 @@
 # .gitignore
 node_modules/
 .env
+# .gitignore
+
+.env
+
+# Terraform files
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
