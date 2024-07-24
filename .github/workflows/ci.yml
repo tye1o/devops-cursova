@@ -41,7 +41,7 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         push: true
-        tags: tjestcay/myapp:latest  # Replace with your Docker Hub username and repository name
+        tags: tjesctacy/myapp:latest  
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
