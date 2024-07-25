@@ -50,3 +50,13 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
         aws-region: eu-north-1
+
+    - name: Deploy to EKS
+      env:
+        KUBECONFIG: /github/home/.kube/config
+      run: |
+        aws eks --region eu-north-1 update-kubeconfig --name toye-cluster
+        kubectl apply -f k8s-manifests/deployment.yaml
+        kubectl apply -f k8s-manifests/service.yaml
+
+       
