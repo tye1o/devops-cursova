@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-config
+  namespace: logging
+data:
+  fluent.conf: |
+    <source>
+      @type forward
+      port 24224
+      bind 0.0.0.0
+    </source>
+
+    <match **>
+      @type elasticsearch
+      host elasticsearch.logging.svc.cluster.local
+      port 9200
+      logstash_format true
+      logstash_prefix fluentd
+      logstash_dateformat %Y.%m.%d
+      include_tag_key true
+      tag_key @log_name
+      <buffer>
+        @type file
+        path /var/log/fluentd-buffers/elasticsearch.buffer
+        flush_interval 5s
+        flush_at_shutdown true
+        flush_thread_count 2
+        retry_wait 1s
+        retry_max_interval 30s
+        retry_timeout 60m
+        queued_chunks_limit_size 32
+        total_limit_size 8589934592
+        chunk_limit_size 8m
+        overflow_action block
+      </buffer>
+    </match>

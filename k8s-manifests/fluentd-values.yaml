@@ -1,0 +1,17 @@
+fluentd:
+  config:
+    filters:
+      - "@type": record_transformer
+        enable_ruby: true
+        auto_typecast: true
+        records:
+          container_name: ${record['kubernetes']['container_name']}
+          pod_name: ${record['kubernetes']['pod_name']}
+          namespace: ${record['kubernetes']['namespace_name']}
+    outputs:
+      - "@type": elasticsearch
+        host: "elasticsearch-master.logging.svc.cluster.local"
+        port: 9200
+        logstash_format: true
+        include_tag_key: true
+        tag_key: "@log_name"
