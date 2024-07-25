@@ -1,4 +1,3 @@
-# .github/workflows/ci.yml
 name: CI Pipeline
 
 on:
@@ -41,7 +40,7 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         push: true
-        tags: tjesctacy/myapp:latest  
+        tags: tjesctacy/myapp:latest
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -53,10 +52,12 @@ jobs:
 
     - name: Deploy to EKS
       env:
-        KUBECONFIG: /github/home/.kube/config
+        KUBECONFIG: $GITHUB_WORKSPACE/.kube/config
       run: |
-        aws eks --region eu-north-1 update-kubeconfig --name toye-cluster
-        kubectl apply -f k8s-manifests/deployment.yaml
-        kubectl apply -f k8s-manifests/service.yaml
+        mkdir -p $GITHUB_WORKSPACE/.kube
+        aws eks --region eu-north-1 update-kubeconfig --name toye-cluster --kubeconfig $GITHUB_WORKSPACE/.kube/config
+        kubectl apply -f k8s-manifests/deployment.yaml --kubeconfig $GITHUB_WORKSPACE/.kube/config
+        kubectl apply -f k8s-manifests/service.yaml --kubeconfig $GITHUB_WORKSPACE/.kube/config
 
-       
+        # Apply ingress if using
+        # kubectl apply -f k8s-manifests/ingress.yaml --kubeconfig $GITHUB_WORKSPACE/.kube/config
