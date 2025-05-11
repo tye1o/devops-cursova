@@ -244,6 +244,4 @@ kubectl port-forward svc/grafana 3000:3000 -n monitoring
 4. Select "Loki" data source
 5. Use the query: `{namespace="python-app"}`
 
-# Technical Documentation
-
-Detailed technical documentation can be found at [TOYE-devops-project](https://github.com/OluwaTossin/TOYE-devops-project/wiki)
+# Based on [TOYE-devops-project](https://github.com/OluwaTossin/TOYE-devops-project/wiki)
