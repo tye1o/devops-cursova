@@ -25,13 +25,15 @@ devops-cursova/
 │       ├── main.tf           # Основна Terraform конфігурація для локального розгортання
 │       └── outputs.tf        # Terraform виводи для локального розгортання
 ├── k8s-manifests/            # Kubernetes маніфести для локального розгортання
-│   ├── deployment.yaml       # Конфігурація розгортання
-│   ├── service.yaml          # Конфігурація сервісу
-│   ├── namespace.yaml        # Конфігурація namespace для моніторингу
-│   ├── prometheus-*.yaml     # Конфігурація Prometheus
-│   ├── grafana-*.yaml        # Конфігурація Grafana
-│   ├── loki-*.yaml           # Конфігурація Loki
-│   └── promtail-*.yaml       # Конфігурація Promtail
+│   ├── app/                  # Маніфести для додатку
+│   │   ├── deployment.yaml   # Конфігурація розгортання додатку
+│   │   ├── service.yaml      # Конфігурація сервісу додатку
+│   │   └── namespace.yaml    # Конфігурація namespace для додатку
+│   └── monitoring/           # Маніфести для системи моніторингу
+│       ├── prometheus-*.yaml # Конфігурації Prometheus
+│       ├── grafana-*.yaml    # Конфігурації Grafana
+│       ├── loki-*.yaml       # Конфігурації Loki
+│       └── promtail-*.yaml   # Конфігурації Promtail
 ├── .github/                  # GitHub Workflows
 │   └── workflows/
 │       ├── ci.yml            # CI конфігурація
@@ -66,31 +68,24 @@ devops-cursova/
 3. **Економія**: Оплата лише за фактичний час виконання коду.
 4. **Інтеграція з API Gateway**: Створення повноцінного API для доступу до додатку.
 
-### CloudWatch Free Tier та моніторинг
+### CloudWatch моніторинг
 
-Проект оптимізовано для максимального використання безкоштовних лімітів CloudWatch:
+Для моніторингу AWS Lambda використовується CloudWatch. Наша конфігурація оптимізована для безкоштовного рівня:
 
-#### Ліміти Free Tier CloudWatch:
-1. **Логи (CloudWatch Logs)**:
-   - 5 ГБ даних щомісяця (включно з інжестом, архівним зберіганням і даними, просканованими Log Insights-запитами)
-   - 1 800 хвилин Live Tail (приблизно 1 година "живої" стрічки на добу)
+#### Логування в CloudWatch
+- **Автоматичне логування**: Lambda функція автоматично записує логи в CloudWatch Logs
+- **Формат логів**: Кожен запит до API Gateway логується з деталями події
+- **Період зберігання**: Встановлено 3 дні для оптимізації використання безкоштовного ліміту 5 ГБ
 
-2. **Метрики (Metrics)**:
-   - 10 безкоштовних метрик (Custom Metrics або Detailed Monitoring)
-   - 1 000 000 API-запитів до CloudWatch Metrics щомісяця
+#### Метрики в CloudWatch
+- **Lambda метрики**: Errors, Throttles, Duration, Invocations
+- **API Gateway метрики**: Latency, Count, 4XXError, 5XXError
+- **Використання безкоштовних метрик**: Оптимізовано для 10 безкоштовних метрик CloudWatch
 
-3. **Дашборди (Dashboards)**:
-   - 3 Custom Dashboards (до 50 метрик у кожному)
-   - Усі автоматичні дашборди — безлімітні й безкоштовні
-
-4. **Аларми (Alarms)**:
-   - 10 Alarm metrics стандартної роздільної здатності
-
-#### Наша конфігурація CloudWatch:
-- **Логи**: Період зберігання логів встановлено на 3 дні для оптимізації використання 5 ГБ безкоштовного ліміту
-- **Метрики**: Налаштовано основні метрики для Lambda (Errors, Throttles, Duration) та API Gateway
-- **Дашборд**: Створено один дашборд з ключовими метриками (залишається ще 2 безкоштовних)
-- **Аларми**: Налаштовано 3 аларми для моніторингу помилок, обмежень та тривалості виконання Lambda функції
+#### Аларми CloudWatch
+- **Помилки Lambda**: Сповіщення при перевищенні порогу помилок
+- **Тривалість виконання**: Сповіщення при перевищенні середнього часу виконання
+- **Обмеження API Gateway**: Сповіщення про обмеження запитів
 
 ### Налаштування AWS облікового запису
 
@@ -165,38 +160,39 @@ minikube docker-env --shell powershell | Invoke-Expression
 # Збірка Docker образу
 docker build -t python-app:latest .
 
-# Створення namespace для моніторингу
-kubectl apply -f k8s-manifests/namespace.yaml
+# Створення namespace
+kubectl apply -f k8s-manifests/app/namespace.yaml
+kubectl apply -f k8s-manifests/monitoring/namespace.yaml
 
 # Розгортання додатку
-kubectl apply -f k8s-manifests/deployment.yaml
-kubectl apply -f k8s-manifests/service.yaml
+kubectl apply -f k8s-manifests/app/deployment.yaml
+kubectl apply -f k8s-manifests/app/service.yaml
 
 # Розгортання системи моніторингу
-kubectl apply -f k8s-manifests/prometheus-config.yaml
-kubectl apply -f k8s-manifests/prometheus-server-pv.yaml
-kubectl apply -f k8s-manifests/prometheus-server-pvc.yaml
-kubectl apply -f k8s-manifests/prometheus-deployment.yaml
-kubectl apply -f k8s-manifests/prometheus-service.yaml
+kubectl apply -f k8s-manifests/monitoring/prometheus-config.yaml
+kubectl apply -f k8s-manifests/monitoring/prometheus-server-pv.yaml
+kubectl apply -f k8s-manifests/monitoring/prometheus-server-pvc.yaml
+kubectl apply -f k8s-manifests/monitoring/prometheus-deployment.yaml
+kubectl apply -f k8s-manifests/monitoring/prometheus-service.yaml
 
-kubectl apply -f k8s-manifests/grafana-datasource.yaml
-kubectl apply -f k8s-manifests/grafana-deployment.yaml
-kubectl apply -f k8s-manifests/grafana-service.yaml
+kubectl apply -f k8s-manifests/monitoring/grafana-datasource.yaml
+kubectl apply -f k8s-manifests/monitoring/grafana-deployment.yaml
+kubectl apply -f k8s-manifests/monitoring/grafana-service.yaml
 
-kubectl apply -f k8s-manifests/loki-config.yaml
-kubectl apply -f k8s-manifests/loki-deployment.yaml
-kubectl apply -f k8s-manifests/loki-service.yaml
+kubectl apply -f k8s-manifests/monitoring/loki-config.yaml
+kubectl apply -f k8s-manifests/monitoring/loki-deployment.yaml
+kubectl apply -f k8s-manifests/monitoring/loki-service.yaml
 
-kubectl apply -f k8s-manifests/promtail-rbac.yaml
-kubectl apply -f k8s-manifests/promtail-configmap.yaml
-kubectl apply -f k8s-manifests/promtail-daemonset.yaml
+kubectl apply -f k8s-manifests/monitoring/promtail-rbac.yaml
+kubectl apply -f k8s-manifests/monitoring/promtail-configmap.yaml
+kubectl apply -f k8s-manifests/monitoring/promtail-daemonset.yaml
 
 # Перевірка статусу
 kubectl get pods -n monitoring
-kubectl get pods
+kubectl get pods -n python-app
 
 # Відкриття додатку в браузері
-minikube service python-app
+minikube service python-app -n python-app
 ```
 
 ## Розробка
@@ -218,26 +214,29 @@ python-lambda-local -f lambda_handler app.py event.json
 
 ## Моніторинг
 
-### Локальний моніторинг
+### Локальний стек моніторингу
 
-Проект використовує стек моніторингу, що складається з:
+Проект використовує повний стек моніторингу для локального розгортання:
 
-1. **Prometheus** - для збору та зберігання метрик
-2. **Grafana** - для візуалізації метрик
-3. **Loki** - для збору та зберігання логів
-4. **Promtail** - для збору логів з контейнерів
+1. **Prometheus** - збір та зберігання метрик
+   - Конфігурація: `k8s-manifests/monitoring/prometheus-config.yaml`
+   - Зберігання даних: `prometheus-server-pv.yaml` та `prometheus-server-pvc.yaml`
+   - Розгортання: `prometheus-deployment.yaml` та `prometheus-service.yaml`
 
-#### Доступ до інструментів моніторингу
+2. **Grafana** - візуалізація метрик та логів
+   - Джерела даних: `grafana-datasource.yaml` (Prometheus та Loki)
+   - Розгортання: `grafana-deployment.yaml` та `grafana-service.yaml`
+   - Доступ: http://localhost:3000 (після port-forward)
+   - Логін: admin / Пароль: admin
 
-```powershell
-# Prometheus (метрики)
-kubectl port-forward svc/prometheus-service 9090:9090 -n monitoring
+3. **Loki** - агрегація та зберігання логів
+   - Конфігурація: `loki-config.yaml`
+   - Розгортання: `loki-deployment.yaml` та `loki-service.yaml`
 
-# Grafana (дашборди)
-kubectl port-forward svc/grafana 3000:3000 -n monitoring
-# Логін: admin
-# Пароль: admin
-```
+4. **Promtail** - збір логів з контейнерів
+   - Конфігурація: `promtail-configmap.yaml`
+   - Права доступу: `promtail-rbac.yaml`
+   - Розгортання: `promtail-daemonset.yaml`
 
 #### Метрики додатку
 
@@ -246,29 +245,44 @@ kubectl port-forward svc/grafana 3000:3000 -n monitoring
 1. `app_request_count` - лічильник запитів за методом, ендпоінтом та статусом
 2. `app_request_latency_seconds` - гістограма часу відповіді за методом та ендпоінтом
 
-#### Логування
+#### Доступ до інструментів моніторингу
 
-Логи додатку збираються Promtail та зберігаються в Loki. Вони доступні через Grafana в розділі "Explore".
+```powershell
+# Prometheus (метрики)
+kubectl port-forward svc/prometheus-service 9090:9090 -n monitoring
 
-### AWS моніторинг
-Для моніторингу AWS Lambda використовується CloudWatch. Проект налаштовано з урахуванням обмежень безкоштовного рівня CloudWatch:
+# Grafana (дашборди та логи)
+kubectl port-forward svc/grafana 3000:3000 -n monitoring
+```
+
+#### Перегляд логів у Grafana
+
+1. Відкрийте Grafana: http://localhost:3000
+2. Увійдіть з обліковими даними: admin / admin
+3. Перейдіть до розділу "Explore"
+4. Виберіть джерело даних "Loki"
+5. Використовуйте запит: `{namespace="python-app"}`
+
+### AWS CloudWatch моніторинг
+
+Для перегляду логів та метрик у AWS CloudWatch:
 
 1. **Перегляд логів**: 
    - AWS консоль > CloudWatch > Log groups > /aws/lambda/python-app
-   - Період зберігання: 3 дні для оптимізації використання 5 ГБ безкоштовного ліміту
+   - Фільтрація логів: Використовуйте CloudWatch Logs Insights для аналізу
 
-2. **Дашборд**:
-   - AWS консоль > CloudWatch > Dashboards > python-app-dashboard
-   - Містить ключові метрики Lambda функції та API Gateway
+2. **Перегляд метрик**:
+   - AWS консоль > CloudWatch > Metrics > Lambda > By Function Name
+   - Доступні метрики: Errors, Throttles, Duration, Invocations
 
-3. **Аларми**:
-   - Налаштовано аларми для моніторингу помилок, обмежень та тривалості виконання
-   - Переглянути можна в AWS консолі > CloudWatch > Alarms
+3. **Налаштування алармів**:
+   - AWS консоль > CloudWatch > Alarms
+   - Створення нових алармів: "Create alarm" > "Select metric"
 
-4. **Оптимізація використання Free Tier**:
-   - Використано лише 3 з 10 доступних безкоштовних алармів
-   - Створено 1 з 3 доступних безкоштовних дашбордів
-   - Налаштовано короткий період зберігання логів для економії місця
+4. **Оптимізація Free Tier**:
+   - Використовуйте не більше 10 метрик
+   - Створюйте не більше 10 алармів
+   - Обмежте період зберігання логів до 3-7 днів
 
 # Технічна документація
 
