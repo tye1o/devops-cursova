@@ -21,9 +21,4 @@ output "s3_bucket_name" {
 output "s3_bucket_domain" {
   description = "Domain name of the S3 bucket"
   value       = aws_s3_bucket.app_bucket.bucket_domain_name
-}
-
-output "cloudwatch_log_group" {
-  description = "Name of the CloudWatch Log Group"
-  value       = aws_cloudwatch_log_group.lambda_logs.name
 } 
