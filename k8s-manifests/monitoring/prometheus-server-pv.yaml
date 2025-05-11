@@ -4,11 +4,11 @@ metadata:
   name: prometheus-server-pv
 spec:
   capacity:
-    storage: 10Gi
+    storage: 1Gi
   volumeMode: Filesystem
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: gp2
+  storageClassName: standard
   hostPath:
-    path: /mnt/data/prometheus
+    path: /tmp/prometheus

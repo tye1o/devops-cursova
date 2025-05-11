@@ -1,6 +1,10 @@
 # .dockerignore
-node_modules/
-
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+venv/
+.env
 
 .terraform/
 terraform.tfstate
